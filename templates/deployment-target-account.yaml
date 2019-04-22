@@ -8,7 +8,7 @@ Parameters:
     Type: String
     Description: The SNS topic in this region which you use as dead-letter queue. (Optional)
     Default: ''
-  EventsTopicName:
+  StackEventsTopic:
     Type: String
     Description: The SNS topic in this region where you publish Cloudformation stack events. (Optional)
     Default: ''
