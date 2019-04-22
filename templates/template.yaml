@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'sends codeubild and codepipline failure messages to Telegram'
+
+Parameters:
+  BuildStatuses:
+    Type: List<String>
+    Default: 'FAILED'
+  Role:
+    Type: String
+  TelegramBotToken:
+    Type: String
+    NoEcho: true
+  TelegramChatId:
+    Type: String
+
+Resources:
+  Fn:
+    Type: AWS::Serverless::Function
+    Properties:
+      InlineCode: !Sub |
+        from botocore.vendored import requests
+        from urllib.parse import quote_plus
+
+        def handler(event, context):
+          print('event', event)
+          account = event.get('account')
+          region = event['region']
+
+          if 'detail' not in event:
+            return
+          message = f'From {account} in {region}:'
+          if 'build-status' in event['detail']:
+            status = event['detail']['build-status']
+            name = event['detail']['project-name']
+            build_id = event['detail']['build-id']
+            build_hash = build_id[build_id.rindex(':') + 1:]
+
+            message += f'\nBuild project {name} is now in <code style="color:red">{status}</code> status.'
+            message += f'\nLink to build: https://console.aws.amazon.com/codesuite/codebuild/projects/{name}/build/{name}%3A{build_hash}/log?region={region}'
+          else:
+            name = event['detail']['pipeline']
+            status = event['detail']['state']
+            execution_id = event['detail']['execution-id']
+
+            message += f'\nPipeline {name} is now in <code>{status}</code> status.'
+            message += f'\nLink to pipeline execution: https://{region}.console.aws.amazon.com/codesuite/codepipeline/pipelines/{name}/executions/{execution_id}/timeline?region={region}'
+
+          result = requests.post('https://api.telegram.org/bot${TelegramBotToken}/sendMessage', json={'chat_id': ${TelegramChatId}, 'text': message, 'parse_mode': 'html'}).json()
+          print('result', result)
+      Handler: index.handler
+      Timeout: 30
+      MemorySize: 128
+      Role: !Ref Role
+      Runtime: python3.7
+      Events:
+        CodeBuild:
+          Type: CloudWatchEvent
+          Properties:
+            Pattern:
+              source: ['aws.codebuild']
+              detail-type: ['CodeBuild Build State Change']
+              detail:
+                build-status: !Ref BuildStatuses
+        CodePipeline:
+          Type: CloudWatchEvent
+          Properties:
+            Pattern:
+              source: ['aws.codepipeline']
+              detail-type: ['CodePipeline Pipeline Execution State Change']
+              detail:
+                state: !Ref BuildStatuses

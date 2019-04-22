@@ -1,0 +1,8 @@
+template_path: template.yaml
+
+region: ap-northeast-1
+
+parameters:
+  Role: !stack_output app/dev/base.yaml::FnRole
+  TelegramBotToken: !aws ssm::get_parameter::'Name':'bot-token','WithDecryption':True::Parameter.Value::us-east-1
+  TelegramChatId: !aws ssm::get_parameter::'Name':'/pipeline-errors-to-telegram/chat-id'::Parameter.Value::us-east-1
