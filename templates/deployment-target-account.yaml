@@ -6,8 +6,12 @@ Parameters:
     Type: String
   DlqName:
     Type: String
+    Description: The SNS topic in this region which you use as dead-letter queue. (Optional)
+    Default: ''
   EventsTopicName:
     Type: String
+    Description: The SNS topic in this region where you publish Cloudformation stack events. (Optional)
+    Default: ''
   ProjectName:
     Type: String
 
@@ -48,7 +52,7 @@ Resources:
           - Effect: Allow
             Action:
               - sns:Publish
-            Resource: !Sub arn:aws:sns:*:${AWS::AccountId}:${EventsTopicName}
+            Resource: !Sub arn:aws:sns:*:${AWS::AccountId}:${StackEventsTopic}
           - Effect: Allow
             Action:
               - sns:Publish
@@ -130,7 +134,7 @@ Resources:
               - sns:Unsubscribe
             Effect: Allow
             Resource:
-              - !Sub arn:aws:sns:*:${AWS::AccountId}:${EventsTopicName}
+              - !Sub arn:aws:sns:*:${AWS::AccountId}:${StackEventsTopic}
           - Action:
               - events:PutRule
               - events:DescribeRule
