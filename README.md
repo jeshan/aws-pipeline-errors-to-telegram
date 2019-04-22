@@ -1,6 +1,6 @@
 # aws-pipeline-errors-to-telegram
 
-Regularly sends you your current balance for your various AWS accounts to a (private) Telegram group.
+Sends you codebuild and codepipeline deployment failures to a (private) Telegram group.
 
 ![Demo](screenshot.png)
 
